@@ -1,0 +1,13 @@
+{
+  "name": "ecommerce-payment-service",
+  "version": "1.0.0",
+  "description": "Payment simulation engine subscribing to order events and emitting billing transactions.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "kafkajs": "^2.2.4"
+  }
+}

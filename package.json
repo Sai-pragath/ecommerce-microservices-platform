@@ -1,0 +1,21 @@
+{
+  "name": "distributed-ecommerce-platform",
+  "version": "1.0.0",
+  "description": "Distributed E-Commerce platform using Kafka (Redpanda), Postgres, and Redis.",
+  "scripts": {
+    "start:local": "node start-local.js",
+    "infra:up": "docker compose up -d postgres redis redpanda redpanda-console",
+    "infra:down": "docker compose down",
+    "app:build": "docker compose build",
+    "app:up": "docker compose up --build",
+    "app:down": "docker compose down",
+    "logs": "docker compose logs -f",
+    "logs:gateway": "docker compose logs -f gateway",
+    "logs:order": "docker compose logs -f order-service",
+    "logs:inventory": "docker compose logs -f inventory-service",
+    "logs:payment": "docker compose logs -f payment-service",
+    "logs:notification": "docker compose logs -f notification-service"
+  },
+  "author": "",
+  "license": "ISC"
+}

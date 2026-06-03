@@ -1,0 +1,14 @@
+{
+  "name": "ecommerce-order-service",
+  "version": "1.0.0",
+  "description": "Order management service with PostgreSQL datastore and Redpanda integration.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "kafkajs": "^2.2.4",
+    "pg": "^8.11.3"
+  }
+}

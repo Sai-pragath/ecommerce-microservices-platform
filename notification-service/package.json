@@ -1,0 +1,13 @@
+{
+  "name": "ecommerce-notification-service",
+  "version": "1.0.0",
+  "description": "Notification service simulating email dispatcher subscribing to order and payment topics.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "kafkajs": "^2.2.4"
+  }
+}

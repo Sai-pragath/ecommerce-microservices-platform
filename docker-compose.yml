@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # Infrastructure
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.10
+    container_name: ecommerce-redpanda
+    command:
+      - redpanda start
+      - --smp 1
+      - --overprovisioned
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+    ports:
+      - "9092:9092"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
+
+  redpanda-console:
+    image: docker.redpanda.com/redpandadata/console:v2.4.3
+    container_name: ecommerce-redpanda-console
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_BROKERS=redpanda:29092
+    depends_on:
+      - redpanda
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: ecommerce-postgres
+    environment:
+      POSTGRES_USER: ecommerce_user
+      POSTGRES_PASSWORD: ecommerce_password
+      POSTGRES_DB: ecommerce_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    ports:
+      - "6379:6379"
+
+  # Application Microservices
+  gateway:
+    build: ./gateway
+    container_name: ecommerce-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - KAFKA_BROKERS=redpanda:29092
+      - ORDER_SERVICE_URL=http://order-service:3001
+      - JWT_SECRET=ecommerce_secret_jwt_key_12345
+    depends_on:
+      - redpanda
+      - order-service
+
+  order-service:
+    build: ./order-service
+    container_name: ecommerce-order-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=ecommerce_user
+      - DB_PASSWORD=ecommerce_password
+      - DB_NAME=ecommerce_db
+      - KAFKA_BROKERS=redpanda:29092
+    depends_on:
+      - postgres
+      - redpanda
+
+  inventory-service:
+    build: ./inventory-service
+    container_name: ecommerce-inventory-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - KAFKA_BROKERS=redpanda:29092
+    depends_on:
+      - redis
+      - redpanda
+
+  payment-service:
+    build: ./payment-service
+    container_name: ecommerce-payment-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - KAFKA_BROKERS=redpanda:29092
+    depends_on:
+      - redpanda
+
+  notification-service:
+    build: ./notification-service
+    container_name: ecommerce-notification-service
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - KAFKA_BROKERS=redpanda:29092
+    depends_on:
+      - redpanda
+
+volumes:
+  redpanda_data:
+  postgres_data:

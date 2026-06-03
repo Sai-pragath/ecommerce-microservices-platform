@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event-Driven E-Commerce Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Socket.io client -->
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <span class="pulse-indicator"></span>
+      <h1>Distributed E-Commerce Platform</h1>
+      <span class="badge">Event-Driven Architecture</span>
+    </div>
+    <div id="auth-section">
+      <div id="login-form">
+        <input type="text" id="username" placeholder="Enter username" required>
+        <button id="login-btn">Log In (JWT)</button>
+      </div>
+      <div id="user-info" class="hidden">
+        <span>Logged in as: <strong id="logged-user">admin</strong></span>
+        <button id="logout-btn">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dashboard-grid">
+    <!-- Left Panel: Shopping & Inventory -->
+    <section class="panel shop-panel">
+      <h2>Products & Inventory</h2>
+      <p class="subtitle">Mock data backed by Redis in real-time</p>
+      
+      <div id="products-list" class="products-grid">
+        <!-- Products injected via JS -->
+        <div class="loading">Loading products...</div>
+      </div>
+      
+      <div class="shop-actions">
+        <button id="refill-btn" class="btn btn-secondary">Reset & Refill Stock (Redis)</button>
+      </div>
+    </section>
+
+    <!-- Center Panel: Interactive Network Topology (The Flow) -->
+    <section class="panel topology-panel">
+      <h2>Microservice Network Topology</h2>
+      <p class="subtitle">Live event tracing across Redpanda/Kafka</p>
+
+      <div class="topology-container">
+        <!-- Gateway Node -->
+        <div class="node-container gateway-container">
+          <div class="node" id="node-gateway">
+            <div class="node-icon">🌐</div>
+            <div class="node-name">API Gateway</div>
+            <div class="node-status">JWT Auth & Route</div>
+          </div>
+        </div>
+
+        <!-- Arrow Gateway to Order Service -->
+        <div class="connector gateway-to-order" id="connector-gate-order"></div>
+
+        <!-- Order Service Node -->
+        <div class="node-container order-container">
+          <div class="node" id="node-order">
+            <div class="node-icon">🛒</div>
+            <div class="node-name">Order Service</div>
+            <div class="node-status">Postgres DB</div>
+          </div>
+        </div>
+
+        <!-- Arrow Order Service to Kafka -->
+        <div class="connector order-to-kafka" id="connector-order-kafka"></div>
+
+        <!-- Redpanda (Kafka Broker) Node -->
+        <div class="node broker-node" id="node-broker">
+          <div class="node-icon">🔥</div>
+          <div class="node-name">Redpanda (Kafka)</div>
+          <div class="node-status">Event Streaming Bus</div>
+        </div>
+
+        <!-- Split Connectors from Kafka to 3 parallel consumers -->
+        <div class="connector-line k-to-inv" id="connector-kafka-inventory"></div>
+        <div class="connector-line k-to-pay" id="connector-kafka-payment"></div>
+        <div class="connector-line k-to-notif" id="connector-kafka-notification"></div>
+
+        <!-- Consumers Row -->
+        <div class="consumers-row">
+          <!-- Inventory Service -->
+          <div class="node" id="node-inventory">
+            <div class="node-icon">📦</div>
+            <div class="node-name">Inventory Svc</div>
+            <div class="node-status">Redis Stock</div>
+          </div>
+
+          <!-- Payment Service -->
+          <div class="node" id="node-payment">
+            <div class="node-icon">💳</div>
+            <div class="node-name">Payment Svc</div>
+            <div class="node-status">Billing Engine</div>
+          </div>
+
+          <!-- Notification Service -->
+          <div class="node" id="node-notification">
+            <div class="node-icon">✉️</div>
+            <div class="node-name">Notification Svc</div>
+            <div class="node-status">Email Dispatcher</div>
+          </div>
+        </div>
+
+        <!-- Connectors back to updates -->
+        <div class="connector-line pay-to-k" id="connector-payment-kafka"></div>
+        <div class="connector-line k-to-order-confirm" id="connector-kafka-order-confirm"></div>
+      </div>
+
+      <!-- Live Event Flow Legend -->
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot active-dot"></span> Active Trace</div>
+        <div class="legend-item"><span class="legend-dot success-dot"></span> Success Event</div>
+        <div class="legend-item"><span class="legend-dot failed-dot"></span> Fail / Fallback</div>
+      </div>
+    </section>
+
+    <!-- Right Panel: Orders List -->
+    <section class="panel orders-panel">
+      <h2>Recent Orders</h2>
+      <p class="subtitle">Stored in PostgreSQL database</p>
+      
+      <div id="orders-list" class="orders-list">
+        <!-- Orders injected via JS -->
+        <div class="no-orders">No orders placed yet. Log in to place your first order.</div>
+      </div>
+    </section>
+
+    <!-- Bottom Panel: Live Kafka Event Logs Stream -->
+    <section class="panel logs-panel">
+      <div class="panel-header">
+        <h2>Live Redpanda Stream Event Logs</h2>
+        <span id="connection-status" class="status-disconnected">Connecting WebSockets...</span>
+      </div>
+      <div id="logs-container" class="logs-container">
+        <!-- Logs injected here in real-time -->
+        <div class="log-entry system">System initialized. Waiting for events...</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Distributed E-Commerce Platform &copy; 2026. Made with Redpanda, Postgres, Redis, Express & Socket.io.</p>
+  </footer>
+</body>
+</html>
