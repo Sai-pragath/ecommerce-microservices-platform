@@ -11,27 +11,42 @@ This project features a **hybrid driver engine** designed to run either in a pro
 The diagram below details the transaction lifecycle when a user initiates a `POST /orders` request:
 
 ```mermaid
-graph TD
-    Client[Web Browser Dashboard] -->|"1. POST /orders with JWT"| Gateway[API Gateway]
-    Gateway -->|"2. Route Request"| OrderSvc[Order Service]
-    OrderSvc -->|"3. Write PENDING Order"| Postgres[(PostgreSQL)]
+graph LR
+    subgraph ClientLayer [User Interface]
+        Client[Web Browser Dashboard]
+        Gateway[API Gateway]
+    end
+
+    subgraph AppLayer [Microservices]
+        OrderSvc[Order Service]
+        InventorySvc[Inventory Service]
+        PaymentSvc[Payment Service]
+        NotificationSvc[Notification Service]
+    end
+
+    subgraph DataLayer [Event Bus & Storage]
+        Redpanda[Redpanda Broker]
+        Postgres[(PostgreSQL DB)]
+        Redis[(Redis Cache)]
+    end
+
+    Client -->|"1. POST /orders"| Gateway
+    Gateway -->|"2. Route Request"| OrderSvc
+    OrderSvc -->|"3. Write PENDING"| Postgres
+    OrderSvc -->|"4. Emit order.placed"| Redpanda
+
+    Redpanda -.->|"5a. Consume order.placed"| InventorySvc
+    Redpanda -.->|"5b. Consume order.placed"| PaymentSvc
+    Redpanda -.->|"5c. Consume order.placed"| NotificationSvc
+
+    InventorySvc -->|"6. Reserve Stock"| Redis
+    PaymentSvc -->|"7. Emit payment outcome"| Redpanda
     
-    OrderSvc -->|"4. Emit order.placed"| Redpanda[Redpanda / Kafka]
+    Redpanda -.->|"8a. Update Order Status"| OrderSvc
+    Redpanda -.->|"8b. Stock Rollback"| InventorySvc
     
-    Redpanda -.->|"5a. Consume order.placed"| InventorySvc[Inventory Service]
-    Redpanda -.->|"5b. Consume order.placed"| PaymentSvc[Payment Service]
-    Redpanda -.->|"5c. Consume order.placed"| NotificationSvc[Notification Service]
-    
-    InventorySvc -->|"6. Reserve Stock"| Redis[(Redis)]
-    PaymentSvc -->|"7. Charge Card & Emit payment.processed/failed"| Redpanda
-    NotificationSvc -->|"8. Dispatch Mock Notification"| Webhook[Telemetry Broadcast]
-    
-    Redpanda -.->|"9a. Consume outcome"| OrderSvc
-    Redpanda -.->|"9b. Consume failure (rollback)"| InventorySvc
-    
-    OrderSvc -->|"10. Update Status to CONFIRMED/FAILED"| Postgres
-    
-    Gateway -.->|"WebSockets Broadcast"| Client
+    OrderSvc -->|"9. Save CONFIRMED/FAILED"| Postgres
+    Gateway -.->|"10. WebSockets Broadcast"| Client
 ```
 
 ---
